@@ -24,8 +24,8 @@ vim.opt.rtp:prepend(lazypath)
 
 require('lazy').setup({
   spec = { { import = 'plugins' } },
-  -- The config tree is an out-of-store symlink, so leave the nvim install alone
-  -- and don't nag about updates on startup.
+  -- The flake deploys the config tree from the read-only Nix store.
+  lockfile = vim.fn.stdpath('state') .. '/lazy-lock.json',
   install = { colorscheme = { 'wintry' } },
   checker = { enabled = false },
   change_detection = { notify = false },
