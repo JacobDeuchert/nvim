@@ -11,6 +11,10 @@ return {
   {
     'lewis6991/gitsigns.nvim',
     event = { 'BufReadPre', 'BufNewFile' },
+    -- lazy only registers a stub command for a `cmd` trigger, so without this
+    -- `:Gitsigns` does not exist until some buffer has fired the event above —
+    -- i.e. it is missing in a bare `nvim` with no file argument.
+    cmd = 'Gitsigns',
     opts = {
       -- Signs in the gutter, on by default (`signs` styling stays at the
       -- plugin's defaults). The sign column itself is pinned open in
