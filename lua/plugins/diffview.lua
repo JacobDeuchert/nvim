@@ -44,19 +44,21 @@ return {
         return res.code == 0 and vim.trim(res.stdout or '') or nil
       end
 
-      -- `origin/HEAD` is only present if the clone recorded it (`git remote set-head
-      -- origin -a` fixes a clone that didn't); fall back to whichever of the usual
-      -- two names actually exists rather than guessing.
+      -- Priority: next, then master, then main (remote first for each).
+      -- `origin/HEAD` only as a last resort — it's present only if the clone
+      -- recorded it (`git remote set-head origin -a` fixes a clone that didn't)
+      -- and it usually just points at main anyway.
       local function default_base()
-        local head = git('symbolic-ref', '--short', 'refs/remotes/origin/HEAD')
-        if head then
-          return head
-        end
-        for _, name in ipairs({ 'origin/main', 'origin/master', 'main', 'master' }) do
+        for _, name in ipairs({
+          'origin/next', 'next',
+          'origin/master', 'master',
+          'origin/main', 'main',
+        }) do
           if git('rev-parse', '--verify', '--quiet', name .. '^{commit}') then
             return name
           end
         end
+        return git('symbolic-ref', '--short', 'refs/remotes/origin/HEAD')
       end
 
       vim.api.nvim_create_user_command('Review', function(cmd)
