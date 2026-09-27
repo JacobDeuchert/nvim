@@ -1,38 +1,48 @@
 -- smart-splits.nvim — the nvim half of the Alt+neio nav (Principle 3).
 --
--- DIFFERS FROM THE HOST on purpose. On the host, tmux forwards Alt+neio into
--- nvim when the active pane is vim (the `is_vim` if-shell check) and
--- smart-splits hands focus back to tmux at the edge. herdr 0.8.0 has neither:
--- no vim-aware navigation, no if-shell equivalent, and no smart-splits
--- multiplexer backend — see the "NOT PORTABLE" note in ~/.config/herdr/config.toml.
--- So under herdr these chords never reach nvim (herdr moves its own pane) and
--- edge handoff is impossible; `multiplexer_integration = false` keeps the
--- plugin from shelling out to a multiplexer that isn't there.
---
--- The binds are still worth having: they work whenever nvim runs outside a
--- herdr pane (plain `ssh devvm && nvim`). Split *focus* from inside a herdr
--- pane is still an open question — <C-w>neio is taken by split creation
--- (config/keymaps.lua), so it's <C-w>h/j/k/l or nothing for now.
+-- smart-splits has no herdr backend, so the handoff is vendored from
+-- vim-herdr-navigation (herdr/nvim-navigation/): herdr binds Alt+neio to that
+-- plugin, which forwards the chord into this pane when nvim is in the
+-- foreground; here we move between splits and, at an edge, tell herdr to focus
+-- the neighbouring pane. Outside herdr ($HERDR_PANE_ID unset) the edge is a
+-- plain stop, same as before. `multiplexer_integration = false` keeps
+-- smart-splits from probing for tmux/wezterm/kitty.
+
+-- Move one split in `dir`; at the edge, cross into the neighbouring herdr pane.
+local function focus(dir)
+  return function()
+    local win = vim.api.nvim_get_current_win()
+    require('smart-splits')['move_cursor_' .. dir]()
+    local pane = vim.env.HERDR_PANE_ID
+    if vim.api.nvim_get_current_win() == win and pane and pane ~= '' then
+      -- Target our own pane: `--current` is herdr's globally focused pane.
+      local herdr = vim.env.HERDR_BIN_PATH
+      if not herdr or herdr == '' then herdr = 'herdr' end
+      vim.system({ herdr, 'pane', 'focus', '--direction', dir, '--pane', pane })
+    end
+  end
+end
 
 return {
   {
     'mrjones2014/smart-splits.nvim',
     lazy = false,
     opts = {
-      -- No multiplexer backend for herdr (see above): pure nvim split moves.
       multiplexer_integration = false,
       -- Don't wrap around at the far edge of the outermost pane — wrapping makes
       -- "move left" occasionally jump right, which breaks the directional model.
+      -- It also keeps the window unchanged at the edge, which is what focus()
+      -- keys the herdr handoff on.
       at_edge = 'stop',
       -- Resize in the same 3-cell step the pane layer uses (herdr resize_pane_*).
       default_amount = 3,
     },
     keys = {
       -- focus: N E I O = ← ↓ ↑ →
-      { '<M-n>', '<cmd>SmartCursorMoveLeft<cr>',  desc = 'focus split/pane ←' },
-      { '<M-e>', '<cmd>SmartCursorMoveDown<cr>',  desc = 'focus split/pane ↓' },
-      { '<M-i>', '<cmd>SmartCursorMoveUp<cr>',    desc = 'focus split/pane ↑' },
-      { '<M-o>', '<cmd>SmartCursorMoveRight<cr>', desc = 'focus split/pane →' },
+      { '<M-n>', focus('left'),  desc = 'focus split/pane ←' },
+      { '<M-e>', focus('down'),  desc = 'focus split/pane ↓' },
+      { '<M-i>', focus('up'),    desc = 'focus split/pane ↑' },
+      { '<M-o>', focus('right'), desc = 'focus split/pane →' },
 
       -- resize: Alt+Ctrl+neio (Principle 4 modifier escalation)
       { '<M-C-n>', '<cmd>SmartResizeLeft<cr>',  desc = 'resize split/pane ←' },

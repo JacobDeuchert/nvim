@@ -1,0 +1,34 @@
+# Vendored from https://github.com/paulbkim-dev/vim-herdr-navigation (MIT, see
+# LICENSE), rebound from Ctrl+hjkl to the Alt+neio scheme. The nvim half lives
+# in lua/plugins/smart-splits.lua. Deployed and linked by flake.nix.
+
+id = "nvim-navigation"
+name = "Nvim Navigation"
+version = "0.1.0"
+min_herdr_version = "0.7.0"
+description = "Alt+neio navigation across herdr panes and nvim splits"
+platforms = ["linux", "macos"]
+
+[[actions]]
+id = "left"
+title = "Navigate left (nvim/herdr)"
+contexts = ["global"]
+command = ["bash", "navigate.sh", "left"]
+
+[[actions]]
+id = "down"
+title = "Navigate down (nvim/herdr)"
+contexts = ["global"]
+command = ["bash", "navigate.sh", "down"]
+
+[[actions]]
+id = "up"
+title = "Navigate up (nvim/herdr)"
+contexts = ["global"]
+command = ["bash", "navigate.sh", "up"]
+
+[[actions]]
+id = "right"
+title = "Navigate right (nvim/herdr)"
+contexts = ["global"]
+command = ["bash", "navigate.sh", "right"]
