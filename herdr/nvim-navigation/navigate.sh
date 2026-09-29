@@ -2,25 +2,33 @@
 #
 # herdr side of the Alt+neio nav. Vendored from vim-herdr-navigation (MIT).
 #
-# Invoked by a herdr keybind as: navigate.sh <left|down|up|right>
+# Invoked by a herdr keybind as: navigate.sh <focus|resize> <left|down|up|right>
 #
 # If the focused pane runs vim/nvim in the foreground, forward the chord into it
-# so smart-splits moves between splits (and, at an edge, calls back into herdr —
-# see lua/plugins/smart-splits.lua). Otherwise move herdr's pane focus.
-# Needs `jq`; without it every press just moves herdr focus.
+# (Alt+neio = focus, Alt+Ctrl+neio = resize) so smart-splits acts on splits
+# and, at an edge, calls back into herdr — see lua/plugins/smart-splits.lua.
+# Otherwise focus/resize the herdr pane directly.
+# Needs `jq`; without it every press goes straight to herdr.
 
 set -euo pipefail
 
-dir="${1:?usage: navigate.sh <left|down|up|right>}"
+op="${1:?usage: navigate.sh <focus|resize> <left|down|up|right>}"
+dir="${2:?usage: navigate.sh <focus|resize> <left|down|up|right>}"
 herdr="${HERDR_BIN_PATH:-herdr}"
 pane="${HERDR_PANE_ID:-}"
 
 case "$dir" in
-  left)  key="alt+n" ;;
-  down)  key="alt+e" ;;
-  up)    key="alt+i" ;;
-  right) key="alt+o" ;;
+  left)  letter="n" ;;
+  down)  letter="e" ;;
+  up)    letter="i" ;;
+  right) letter="o" ;;
   *) echo "navigate.sh: unknown direction: $dir" >&2; exit 2 ;;
+esac
+
+case "$op" in
+  focus)  key="alt+$letter" ;;
+  resize) key="ctrl+alt+$letter" ;;
+  *) echo "navigate.sh: unknown op: $op" >&2; exit 2 ;;
 esac
 
 # vim-tmux-navigator's matcher: vi, vim, nvim, view, gvim, *diff, ...
@@ -40,7 +48,7 @@ fi
 if [ "$forward" -eq 1 ]; then
   exec "$herdr" pane send-keys "$pane" "$key"
 elif [ -n "$pane" ]; then
-  exec "$herdr" pane focus --direction "$dir" --pane "$pane"
+  exec "$herdr" pane "$op" --direction "$dir" --pane "$pane"
 else
-  exec "$herdr" pane focus --direction "$dir" --current
+  exec "$herdr" pane "$op" --direction "$dir" --current
 fi

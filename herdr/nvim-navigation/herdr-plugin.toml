@@ -1,34 +1,59 @@
 # Vendored from https://github.com/paulbkim-dev/vim-herdr-navigation (MIT, see
-# LICENSE), rebound from Ctrl+hjkl to the Alt+neio scheme. The nvim half lives
-# in lua/plugins/smart-splits.lua. Deployed and linked by flake.nix.
+# LICENSE), rebound from Ctrl+hjkl to the Alt+neio scheme and extended with
+# Alt+Ctrl+neio resize. The nvim half lives in lua/plugins/smart-splits.lua.
+# Deployed and linked by flake.nix.
 
 id = "nvim-navigation"
 name = "Nvim Navigation"
 version = "0.1.0"
 min_herdr_version = "0.7.0"
-description = "Alt+neio navigation across herdr panes and nvim splits"
+description = "Alt+neio focus / Alt+Ctrl+neio resize across herdr panes and nvim splits"
 platforms = ["linux", "macos"]
 
 [[actions]]
 id = "left"
 title = "Navigate left (nvim/herdr)"
 contexts = ["global"]
-command = ["bash", "navigate.sh", "left"]
+command = ["bash", "navigate.sh", "focus", "left"]
 
 [[actions]]
 id = "down"
 title = "Navigate down (nvim/herdr)"
 contexts = ["global"]
-command = ["bash", "navigate.sh", "down"]
+command = ["bash", "navigate.sh", "focus", "down"]
 
 [[actions]]
 id = "up"
 title = "Navigate up (nvim/herdr)"
 contexts = ["global"]
-command = ["bash", "navigate.sh", "up"]
+command = ["bash", "navigate.sh", "focus", "up"]
 
 [[actions]]
 id = "right"
 title = "Navigate right (nvim/herdr)"
 contexts = ["global"]
-command = ["bash", "navigate.sh", "right"]
+command = ["bash", "navigate.sh", "focus", "right"]
+
+[[actions]]
+id = "resize-left"
+title = "Resize left (nvim/herdr)"
+contexts = ["global"]
+command = ["bash", "navigate.sh", "resize", "left"]
+
+[[actions]]
+id = "resize-down"
+title = "Resize down (nvim/herdr)"
+contexts = ["global"]
+command = ["bash", "navigate.sh", "resize", "down"]
+
+[[actions]]
+id = "resize-up"
+title = "Resize up (nvim/herdr)"
+contexts = ["global"]
+command = ["bash", "navigate.sh", "resize", "up"]
+
+[[actions]]
+id = "resize-right"
+title = "Resize right (nvim/herdr)"
+contexts = ["global"]
+command = ["bash", "navigate.sh", "resize", "right"]
