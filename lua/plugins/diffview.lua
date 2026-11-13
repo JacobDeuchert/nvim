@@ -91,6 +91,26 @@ return {
           end, vim.split(out, '\n', { trimempty = true }))
         end,
       })
+
+      -- :DiffviewNoTests [args] — :DiffviewOpen minus test code, for reading the
+      -- production change on its own. Args pass through (`:DiffviewNoTests
+      -- main...HEAD`); the pathspecs go after them. Git's default pathspec `*`
+      -- crosses `/`, so `*tests/*` hits a test dir at any depth.
+      --   dotnet: Foo.Tests/, UnitTests/, Foo.Test/, *Tests.cs, *Test.cs
+      --   UI:     tests/, e2e/, *.test.*, *.spec.*, *.e2e.*
+      local no_tests = {
+        ':(exclude,icase)*tests/*',
+        ':(exclude,icase)*.test/*',
+        ':(exclude)*Tests.cs',
+        ':(exclude)*Test.cs',
+        ':(exclude)*e2e/*',
+        ':(exclude)*.test.*',
+        ':(exclude)*.spec.*',
+        ':(exclude)*.e2e.*',
+      }
+      vim.api.nvim_create_user_command('DiffviewNoTests', function(cmd)
+        vim.cmd(('DiffviewOpen %s -- %s'):format(cmd.args, table.concat(no_tests, ' ')))
+      end, { nargs = '*', desc = 'diffview: open without dotnet / UI test files' })
     end,
 
     -- opts as a function so requiring diffview.actions doesn't load the plugin
