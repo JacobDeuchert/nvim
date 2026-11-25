@@ -25,7 +25,7 @@ return {
       'DiffviewRefresh',
     },
     keys = {
-      { '<leader>gd', '<cmd>Review<cr>',            desc = 'review branch vs merge base (diffview)' },
+      { '<leader>gd', '<cmd>Review<cr>',            desc = 'review branch vs merge base, no tests (diffview)' },
       { '<leader>gc', '<cmd>DiffviewOpen<cr>',      desc = 'diff uncommitted changes' },
       { '<leader>gx', '<cmd>DiffviewClose<cr>',     desc = 'close diffview' },
       { '<leader>gh', '<cmd>DiffviewFileHistory %<cr>', desc = 'history of this file' },
@@ -61,6 +61,22 @@ return {
         return git('symbolic-ref', '--short', 'refs/remotes/origin/HEAD')
       end
 
+      -- Test code :Review leaves out, so the review reads the production change
+      -- on its own. Git's default pathspec `*` crosses `/`, so `*tests/*` hits a
+      -- test dir at any depth.
+      --   dotnet: Foo.Tests/, UnitTests/, Foo.Test/, *Tests.cs, *Test.cs
+      --   UI:     tests/, e2e/, *.test.*, *.spec.*, *.e2e.*
+      local no_tests = {
+        ':(exclude,icase)*tests/*',
+        ':(exclude,icase)*.test/*',
+        ':(exclude)*Tests.cs',
+        ':(exclude)*Test.cs',
+        ':(exclude)*e2e/*',
+        ':(exclude)*.test.*',
+        ':(exclude)*.spec.*',
+        ':(exclude)*.e2e.*',
+      }
+
       vim.api.nvim_create_user_command('Review', function(cmd)
         local base = cmd.args ~= '' and cmd.args or default_base()
         if not base then
@@ -75,12 +91,14 @@ return {
         -- `a...b` is the merge-base diff, `a..b` the plain one. --imply-local puts
         -- the *working-tree* file in the right-hand window instead of a read-only
         -- copy of HEAD, so a typo you spot while reading is fixable on the spot.
+        -- Test code is filtered out (no_tests above); use
+        -- :DiffviewOpen <base>...HEAD when you want the tests too.
         local range = cmd.bang and '..' or '...'
-        vim.cmd(('DiffviewOpen %s%sHEAD --imply-local'):format(base, range))
+        vim.cmd(('DiffviewOpen %s%sHEAD --imply-local -- %s'):format(base, range, table.concat(no_tests, ' ')))
       end, {
         nargs = '?',
         bang = true,
-        desc = 'diffview: review this branch against a base (merge base; ! for its tip)',
+        desc = 'diffview: review this branch against a base, tests excluded (merge base; ! for its tip)',
         complete = function(arglead)
           local out = git('for-each-ref', '--format=%(refname:short)', 'refs/heads', 'refs/remotes')
           if not out then
@@ -91,26 +109,6 @@ return {
           end, vim.split(out, '\n', { trimempty = true }))
         end,
       })
-
-      -- :DiffviewNoTests [args] — :DiffviewOpen minus test code, for reading the
-      -- production change on its own. Args pass through (`:DiffviewNoTests
-      -- main...HEAD`); the pathspecs go after them. Git's default pathspec `*`
-      -- crosses `/`, so `*tests/*` hits a test dir at any depth.
-      --   dotnet: Foo.Tests/, UnitTests/, Foo.Test/, *Tests.cs, *Test.cs
-      --   UI:     tests/, e2e/, *.test.*, *.spec.*, *.e2e.*
-      local no_tests = {
-        ':(exclude,icase)*tests/*',
-        ':(exclude,icase)*.test/*',
-        ':(exclude)*Tests.cs',
-        ':(exclude)*Test.cs',
-        ':(exclude)*e2e/*',
-        ':(exclude)*.test.*',
-        ':(exclude)*.spec.*',
-        ':(exclude)*.e2e.*',
-      }
-      vim.api.nvim_create_user_command('DiffviewNoTests', function(cmd)
-        vim.cmd(('DiffviewOpen %s -- %s'):format(cmd.args, table.concat(no_tests, ' ')))
-      end, { nargs = '*', desc = 'diffview: open without dotnet / UI test files' })
     end,
 
     -- opts as a function so requiring diffview.actions doesn't load the plugin
